@@ -11,6 +11,9 @@ public class Gun : MonoBehaviour
     public int ammoInClip = 30;
     public float fireRate = 0.1f;
     public int ammoInInventory = 270;
+    public float reloadCooldowm = 1.3f;
+    public int attackDamageInBody = 25;
+    public int attackDamageInHead = 100;
 
     
     // Variaveis temporarias
@@ -18,6 +21,8 @@ public class Gun : MonoBehaviour
     int _ammoInClip;
     int _ammoInInventory;
     bool _canShoot;
+    float _reloadCooldown;
+    bool isReloading = false;
 
     // Muzzle Flash
 
@@ -32,8 +37,6 @@ public class Gun : MonoBehaviour
     public float aimSmooth;
 
     // Recoil
-
-    public float test;
 
     [Header("Recoil")]
     public float recoilAmount = 0.1f;
@@ -53,11 +56,18 @@ public class Gun : MonoBehaviour
     Cinemachine.CinemachineBasicMultiChannelPerlin camNoise;
 
 
+    // Animação
+
+    [Header("Animação")]
+    public Animator animator;
+
+
     private void Start()
     {
         _ammoInClip = ammoInClip;
         _ammoInInventory = ammoInInventory;
         _canShoot = true;
+        _reloadCooldown = reloadCooldowm;
 
         if (virtualCam != null)
             camNoise = virtualCam.GetCinemachineComponent<Cinemachine.CinemachineBasicMultiChannelPerlin>();
@@ -76,21 +86,9 @@ public class Gun : MonoBehaviour
             _ammoInClip--;
             StartCoroutine(Shoot());
         }
-        else if (Input.GetKey(KeyCode.R) && _ammoInClip < ammoInClip & _ammoInInventory > 0)
+        else if (Input.GetKeyDown(KeyCode.R) && !isReloading && _ammoInClip < ammoInClip && _ammoInInventory > 0)
         {
-            
-            int _needReload = ammoInClip - _ammoInClip;
-
-            if (_needReload >= _ammoInInventory)
-            {
-                _ammoInClip += _ammoInInventory;
-                _ammoInInventory -= _needReload;
-            }
-            else
-            {
-                _ammoInClip = ammoInClip;
-                _ammoInInventory -= _needReload;
-            }
+            StartCoroutine(Reload());
         }
 
 
@@ -144,6 +142,9 @@ public class Gun : MonoBehaviour
         StartCameraShake();
     }
 
+
+
+
     IEnumerator Shoot()
     {
         DetermineRecoil();
@@ -151,24 +152,34 @@ public class Gun : MonoBehaviour
         StartCoroutine(MuzzleFlash());
 
         RayCastForEnemy();
-
         yield return new WaitForSeconds(fireRate);
         _canShoot = true;
     }
 
     void RayCastForEnemy()
     {
-
+        
         RaycastHit hit;
 
-        if (Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward, out hit))
+        if (Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward, out hit, 100000,LayerMask.GetMask("Shooting")))
         {
             Debug.Log("Acertou" +  hit.transform.name);
 
-        }
+            Debug.Log("Tag do objeto: " + hit.transform.tag);
+
+            if (hit.transform.tag == "EnemyBody")
+            {
+                hit.transform.root.GetComponent<ZombieController>().heathEnemy -= attackDamageInBody;
+                Debug.Log(hit.transform.GetComponent<ZombieController>().heathEnemy);
+            }
+            else if (hit.transform.tag == "EnemyHead")
+            {
+                hit.transform.root.GetComponent<ZombieController>().heathEnemy -= attackDamageInHead;
+                Debug.Log(hit.transform.GetComponent<ZombieController>().heathEnemy);
+            }
 
 
-        
+        } 
     }
 
     IEnumerator MuzzleFlash()
@@ -179,6 +190,34 @@ public class Gun : MonoBehaviour
         flashMuzzleImage.sprite = null;
         flashMuzzleImage.color = new Color(0, 0, 0, 0);
 
+    }
+
+    IEnumerator Reload()
+    {
+        isReloading = true;
+        _canShoot = false;
+
+        // tocar a animação de reload aqui NÃO ESQUECER
+        // exemplo: animator.SetTrigger("Reload");
+        animator.SetTrigger("Reload");
+
+        yield return new WaitForSeconds(reloadCooldowm);
+
+        int _needReload = ammoInClip - _ammoInClip;
+
+        if (_needReload >= _ammoInInventory)
+        {
+            _ammoInClip += _ammoInInventory;
+            _ammoInInventory = 0;
+        }
+        else
+        {
+            _ammoInClip = ammoInClip;
+            _ammoInInventory -= _needReload;
+        }
+
+        _canShoot = true;
+        isReloading = false;
     }
 
 }
