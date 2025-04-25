@@ -1,0 +1,3 @@
+Esse código controla o movimento e pulo de um jogador em um jogo 3D usando o CharacterController da Unity. O jogador se move com as teclas de direção (W, A, S, D) e a velocidade pode ser aumentada ao segurar Shift para correr. O pulo é ativado com a tecla Space,
+mas só ocorre se o jogador estiver no chão, com a força de pulo e a gravidade sendo aplicadas. A câmera segue o personagem, mas só no eixo horizontal (Y). O script também gerencia o estado do cursor: ele é inicialmente bloqueado e invisível,
+e ao apertar Esc, o cursor é desbloqueado e visível. Se o jogador clicar com o botão esquerdo do mouse, o cursor é novamente bloqueado. Em resumo, o código permite movimentação, pulo e controle do cursor de forma simples e eficaz em um jogo 3D.
